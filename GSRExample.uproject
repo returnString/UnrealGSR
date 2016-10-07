@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{C0ACDBA6-4CD9-BD78-C74B-D08F5DB26822}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "GSRExample",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
