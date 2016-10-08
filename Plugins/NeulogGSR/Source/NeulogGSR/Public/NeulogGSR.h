@@ -2,11 +2,24 @@
 
 #include "ModuleManager.h"
 
+enum class NeulogError : uint32
+{
+	None,
+	WriteFailed,
+	ReadFailed,
+	InvalidPrefix,
+	InvalidResponse,
+	OpenFailed,
+	ThreadStartFailed,
+};
+
 class INeulogSensor
 {
 public:
-	virtual bool Connected() const = 0;
-	virtual bool GetValue(float& Value) = 0;
+	virtual ~INeulogSensor() {}
+
+	virtual NeulogError Start() = 0;
+	virtual float GetValue() = 0;
 };
 
 using INeulogSensorPtr = TSharedPtr<INeulogSensor>;

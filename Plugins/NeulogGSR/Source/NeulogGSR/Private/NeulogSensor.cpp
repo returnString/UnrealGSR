@@ -25,9 +25,16 @@ namespace NeulogProtocol
 }
 
 FNeulogSensor::FNeulogSensor(const FString& PortName)
+	: PortID(PortName)
 {
-	UE_LOG(Neulog, Log, TEXT("Opening %s"), *PortName);
-	std::string StdPortName(TCHAR_TO_UTF8(*PortName));
+}
+
+NeulogError FNeulogSensor::Start()
+{
+	ExitRequested = false;
+
+	UE_LOG(Neulog, Log, TEXT("Opening %s"), *PortID);
+	std::string StdPortName(TCHAR_TO_UTF8(*PortID));
 
 	Port.setPort(StdPortName);
 	Port.setBaudrate(115200);
@@ -39,14 +46,14 @@ FNeulogSensor::FNeulogSensor(const FString& PortName)
 	if (!Port.isOpen())
 	{
 		UE_LOG(Neulog, Error, TEXT("Failed to open"));
-		return;
+		return NeulogError::OpenFailed;
 	}
 
 	size_t Written = Port.write(NeulogProtocol::StartMessage, sizeof(NeulogProtocol::StartMessage));
 	if (Written != sizeof(NeulogProtocol::StartMessage))
 	{
 		UE_LOG(Neulog, Error, TEXT("Wrote %zu bytes, expected %zu"), Written, sizeof(NeulogProtocol::StartMessage));
-		return;
+		return NeulogError::WriteFailed;
 	}
 
 	uint8 Buffer[NeulogProtocol::ConnectMessageSize];
@@ -54,53 +61,66 @@ FNeulogSensor::FNeulogSensor(const FString& PortName)
 	if (Read != sizeof(Buffer))
 	{
 		UE_LOG(Neulog, Error, TEXT("Read %zu bytes, expected %zu"), Read, sizeof(Buffer));
-		return;
+		return NeulogError::ReadFailed;
 	}
 
 	if (memcmp(Buffer, NeulogProtocol::StartResponse, sizeof(NeulogProtocol::StartResponse)))
 	{
 		UE_LOG(Neulog, Error, TEXT("Response was incorrect"));
-		return;
+		return NeulogError::InvalidResponse;
 	}
 
-	IsConnected = true;
+	auto ThreadPtr = FRunnableThread::Create(this, TEXT("NeulogSensor"));
+	if (!ThreadPtr)
+	{
+		UE_LOG(Neulog, Error, TEXT("Failed to start sensor thread"));
+		return NeulogError::ThreadStartFailed;
+	}
+
+	Thread.Reset(ThreadPtr);
 	UE_LOG(Neulog, Log, TEXT("Connected successfully"));
+	return NeulogError::None;
 }
 
-bool FNeulogSensor::GetValue(float& Value)
+uint32 FNeulogSensor::Run()
 {
-	size_t Written = Port.write(NeulogProtocol::RequestMessage, sizeof(NeulogProtocol::RequestMessage));
-	if (Written != sizeof(NeulogProtocol::RequestMessage))
+	while (!ExitRequested)
 	{
-		UE_LOG(Neulog, Error, TEXT("Wrote %zu bytes, expected %zu"), Written, sizeof(NeulogProtocol::RequestMessage));
-		return false;
+		size_t Written = Port.write(NeulogProtocol::RequestMessage, sizeof(NeulogProtocol::RequestMessage));
+		if (Written != sizeof(NeulogProtocol::RequestMessage))
+		{
+			UE_LOG(Neulog, Error, TEXT("Wrote %zu bytes, expected %zu"), Written, sizeof(NeulogProtocol::RequestMessage));
+			return (uint32)NeulogError::WriteFailed;
+		}
+
+		uint8 Buffer[NeulogProtocol::DataMessageSize];
+		size_t Read = Port.read(Buffer, sizeof(Buffer));
+		if (Read != sizeof(Buffer))
+		{
+			UE_LOG(Neulog, Error, TEXT("Read %zu bytes, expected %zu"), Read, sizeof(Buffer));
+			return (uint32)NeulogError::ReadFailed;
+		}
+
+		if (Buffer[0] != NeulogProtocol::Prefix)
+		{
+			UE_LOG(Neulog, Error, TEXT("Expected prefix %u, got %u"), NeulogProtocol::Prefix, Buffer[0]);
+			return (uint32)NeulogError::InvalidPrefix;
+		}
+
+		ANSICHAR StringBuffer[NeulogProtocol::StringLength];
+		StringBuffer[sizeof(StringBuffer) - 1] = 0;
+
+		size_t StringIndex = 0;
+		for (int i = 4; i < sizeof(Buffer) - 1; ++i)
+		{
+			uint8 Byte = Buffer[i];
+			StringBuffer[StringIndex++] = NeulogProtocol::GetResultCharacter(Byte / 16);
+			StringBuffer[StringIndex++] = NeulogProtocol::GetResultCharacter(Byte % 16);
+		}
+
+		CurrentValue = FCStringAnsi::Atof(StringBuffer);
+		FPlatformProcess::Sleep(0.1f);
 	}
 
-	uint8 Buffer[NeulogProtocol::DataMessageSize];
-	size_t Read = Port.read(Buffer, sizeof(Buffer));
-	if (Read != sizeof(Buffer))
-	{
-		UE_LOG(Neulog, Error, TEXT("Read %zu bytes, expected %zu"), Read, sizeof(Buffer));
-		return false;
-	}
-
-	if (Buffer[0] != NeulogProtocol::Prefix)
-	{
-		UE_LOG(Neulog, Error, TEXT("Expected prefix %u, got %u"), NeulogProtocol::Prefix, Buffer[0]);
-		return false;
-	}
-
-	ANSICHAR StringBuffer[NeulogProtocol::StringLength];
-	StringBuffer[sizeof(StringBuffer) - 1] = 0;
-
-	size_t StringIndex = 0;
-	for (int i = 4; i < sizeof(Buffer) - 1; ++i)
-	{
-		uint8 Byte = Buffer[i];
-		StringBuffer[StringIndex++] = NeulogProtocol::GetResultCharacter(Byte / 16);
-		StringBuffer[StringIndex++] = NeulogProtocol::GetResultCharacter(Byte % 16);
-	}
-
-	Value = FCStringAnsi::Atof(StringBuffer);
-	return true;
+	return (uint32)NeulogError::None;
 }

@@ -12,7 +12,7 @@ AGSRExampleGameMode::AGSRExampleGameMode()
 	{
 		auto& GSR = INeulogGSRModule::Get();
 		NeulogSensor = GSR.GetPort("COM3");
-		if (!NeulogSensor->Connected())
+		if (NeulogSensor->Start() != NeulogError::None)
 		{
 			NeulogSensor = nullptr;
 		}
@@ -32,14 +32,6 @@ void AGSRExampleGameMode::Tick(float DeltaSeconds)
 
 	if (NeulogSensor.IsValid())
 	{
-		float Value;
-		if (NeulogSensor->GetValue(Value))
-		{
-			UE_LOG(SampleLog, Log, TEXT("Got value: %.2f"), Value);
-		}
-		else
-		{
-			UE_LOG(SampleLog, Error, TEXT("Got no value"));
-		}
+		UE_LOG(SampleLog, Log, TEXT("Got value: %.2f"), NeulogSensor->GetValue());
 	}
 }
