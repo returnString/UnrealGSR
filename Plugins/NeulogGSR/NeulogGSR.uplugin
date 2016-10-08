@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Neulog GSR",
+	"Description": "Plugin for the Neulog GSR sensor",
+	"Category": "Biometrics",
+	"CreatedBy": "Ruan Pearce-Authers",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"Modules": [
+		{
+			"Name": "NeulogGSR",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
