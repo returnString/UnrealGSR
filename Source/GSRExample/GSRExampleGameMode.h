@@ -16,6 +16,7 @@ public:
 
 private:
 	INeulogSensorPtr NeulogSensor;
+	FDebugFloatHistory GSRHistory;
 };
 
 

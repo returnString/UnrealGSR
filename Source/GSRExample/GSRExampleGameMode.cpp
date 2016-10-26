@@ -4,9 +4,12 @@
 #include "GSRExampleGameMode.h"
 #include "GSRExampleCharacter.h"
 
+#include <DrawDebugHelpers.h>
+
 DEFINE_LOG_CATEGORY_STATIC(SampleLog, Log, All);
 
 AGSRExampleGameMode::AGSRExampleGameMode()
+	: GSRHistory(3000, 0, 4, true)
 {
 	if (INeulogGSRModule::IsAvailable())
 	{
@@ -26,8 +29,15 @@ void AGSRExampleGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (NeulogSensor.IsValid())
+	if (UWorld* World = GetWorld())
 	{
-		UE_LOG(SampleLog, Log, TEXT("Got value: %.2f"), NeulogSensor->GetValue());
+		auto Character = UGameplayStatics::GetPlayerCharacter(World, 0);
+		DrawDebugFloatHistory(*World, GSRHistory, Character->GetTransform(), FVector2D(500, 100), FColor::Red, false, -1.f, 1);
+
+		if (NeulogSensor.IsValid())
+		{
+			//UE_LOG(SampleLog, Log, TEXT("Got value: %.2f"), NeulogSensor->GetValue());
+			GSRHistory.AddSample(NeulogSensor->GetValue());
+		}
 	}
 }
