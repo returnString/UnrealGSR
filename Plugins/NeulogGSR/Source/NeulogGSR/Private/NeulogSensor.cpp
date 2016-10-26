@@ -41,11 +41,14 @@ NeulogError FNeulogSensor::Start()
 	Port.setBytesize(serial::eightbits);
 	Port.setStopbits(serial::stopbits_two);
 	Port.setTimeout(0, 1000, 0, 1000, 0);
-	Port.open();
 
-	if (!Port.isOpen())
+	try
 	{
-		UE_LOG(Neulog, Error, TEXT("Failed to open"));
+		Port.open();
+	}
+	catch (const std::exception& Ex)
+	{
+		UE_LOG(Neulog, Error, TEXT("Failed to open: %s"), UTF8_TO_TCHAR(Ex.what()));
 		return NeulogError::OpenFailed;
 	}
 
