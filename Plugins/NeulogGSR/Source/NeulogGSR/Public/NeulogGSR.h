@@ -22,7 +22,7 @@ public:
 	virtual float GetValue() = 0;
 };
 
-using INeulogSensorPtr = TSharedPtr<INeulogSensor>;
+using INeulogSensorPtr = TUniquePtr<INeulogSensor>;
 
 class INeulogGSRModule : public IModuleInterface
 {
