@@ -34,9 +34,8 @@ NeulogError FNeulogSensor::Start()
 	ExitRequested = false;
 
 	UE_LOG(Neulog, Log, TEXT("Opening %s"), *PortID);
-	std::string StdPortName(TCHAR_TO_UTF8(*PortID));
 
-	Port.setPort(StdPortName);
+	Port.setPort(TCHAR_TO_UTF8(*PortID));
 	Port.setBaudrate(115200);
 	Port.setBytesize(serial::eightbits);
 	Port.setStopbits(serial::stopbits_two);
