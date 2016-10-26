@@ -15,7 +15,13 @@ INeulogSensorPtr FNeulogGSRModule::FindSensor()
 	{
 		if (PortInfo.hardware_id == "USB\\VID_10C4&PID_EA60&REV_0100")
 		{
-			return OpenSensorOnPort(UTF8_TO_TCHAR(PortInfo.port.c_str()));
+			FString PortID(UTF8_TO_TCHAR(PortInfo.port.c_str()));
+			UE_LOG(Neulog, Log, TEXT("Autodetection found port %s, attempting"), *PortID);
+			auto Sensor = OpenSensorOnPort(PortID);
+			if (Sensor->Start() == NeulogError::None)
+			{
+				return Sensor;
+			}
 		}
 	}
 

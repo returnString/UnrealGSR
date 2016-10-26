@@ -12,10 +12,6 @@ AGSRExampleGameMode::AGSRExampleGameMode()
 	{
 		auto& GSR = INeulogGSRModule::Get();
 		NeulogSensor = GSR.FindSensor();
-		if (NeulogSensor->Start() != NeulogError::None)
-		{
-			NeulogSensor = nullptr;
-		}
 	}
 
 	// set default pawn class to our Blueprinted character
