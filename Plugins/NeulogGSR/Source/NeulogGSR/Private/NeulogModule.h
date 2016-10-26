@@ -3,5 +3,6 @@
 class FNeulogGSRModule : public INeulogGSRModule
 {
 public:
-	virtual INeulogSensorPtr GetPort(const FString& PortName);
+	virtual INeulogSensorPtr OpenSensorOnPort(const FString& PortName) final;
+	virtual INeulogSensorPtr FindSensor() final;
 };

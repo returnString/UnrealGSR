@@ -27,7 +27,8 @@ using INeulogSensorPtr = TUniquePtr<INeulogSensor>;
 class INeulogGSRModule : public IModuleInterface
 {
 public:
-	virtual INeulogSensorPtr GetPort(const FString& PortName) = 0;
+	virtual INeulogSensorPtr OpenSensorOnPort(const FString& PortName) = 0;
+	virtual INeulogSensorPtr FindSensor() = 0;
 
 	static INeulogGSRModule& Get()
 	{

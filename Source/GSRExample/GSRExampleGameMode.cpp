@@ -11,7 +11,7 @@ AGSRExampleGameMode::AGSRExampleGameMode()
 	if (INeulogGSRModule::IsAvailable())
 	{
 		auto& GSR = INeulogGSRModule::Get();
-		NeulogSensor = GSR.GetPort("COM3");
+		NeulogSensor = GSR.FindSensor();
 		if (NeulogSensor->Start() != NeulogError::None)
 		{
 			NeulogSensor = nullptr;
